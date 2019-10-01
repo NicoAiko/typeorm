@@ -170,7 +170,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                 const queryStartTime = +new Date();
 
                 if (this.isTransactionActive) {
-                    this.transaction.execute(query, parameters || [], (err, result) => {
+                    this.transaction.query(query, parameters || [], (err, result) => {
                         const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
                         const queryEndTime = +new Date();
                         const queryExecutionTime = queryEndTime - queryStartTime;
@@ -184,7 +184,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
                         ok(result);
                     });
                 } else {
-                    this.driver.firebirdDatabase.execute(query, parameters || [], (err, result) => {
+                    this.driver.firebirdDatabase.query(query, parameters || [], (err, result) => {
                         const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
                         const queryEndTime = +new Date();
                         const queryExecutionTime = queryEndTime - queryStartTime;
