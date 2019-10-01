@@ -34,6 +34,7 @@ import {BroadcasterResult} from "../subscriber/BroadcasterResult";
 import {SelectQueryBuilderOption} from "./SelectQueryBuilderOption";
 import {ObjectUtils} from "../util/ObjectUtils";
 import {DriverUtils} from "../driver/DriverUtils";
+import { FirebirdDriver } from "../driver/firebird/FirebirdDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -54,7 +55,8 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         sql += this.createGroupByExpression();
         sql += this.createHavingExpression();
         sql += this.createOrderByExpression();
-        sql += this.createLimitOffsetExpression();
+        if (!(this.connection.driver instanceof FirebirdDriver))
+            sql += this.createLimitOffsetExpression();
         sql += this.createLockExpression();
         sql = sql.trim();
         if (this.expressionMap.subQuery)
@@ -1408,7 +1410,15 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                 return this.getTableName(alias.tablePath!) + " " + this.escape(alias.name);
             });
-        const select = "SELECT " + (this.expressionMap.selectDistinct ? "DISTINCT " : "");
+
+        let select;
+        if (this.connection.driver instanceof FirebirdDriver) {
+            // Firebird uses different order for limiting result lists
+            const limitOffset = this.createLimitOffsetExpression();
+            select = "SELECT" + (limitOffset.length ? ` ${limitOffset} ` : " ") + (this.expressionMap.selectDistinct ? "DISTINCT " : "");
+        } else
+            select = "SELECT " + (this.expressionMap.selectDistinct ? "DISTINCT " : "");
+
         const selection = allSelects.map(select => select.selection + (select.aliasName ? " AS " + this.escape(select.aliasName) : "")).join(", ");
         return select + selection + " FROM " + froms.join(", ") + lock;
     }
@@ -1586,6 +1596,14 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 return " FETCH NEXT " + limit + " ROWS ONLY";
             if (offset)
                 return " OFFSET " + offset + " ROWS";
+
+        } else if (this.connection.driver instanceof FirebirdDriver) {
+            if (limit && offset)
+                return `FIRST ${limit} SKIP ${offset}`;
+            if (limit)
+                return `FIRST ${limit}`;
+            if (offset)
+                return `SKIP ${offset}`;
 
         } else {
             if (limit && offset)
