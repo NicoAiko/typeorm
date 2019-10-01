@@ -15,4 +15,5 @@ export type DatabaseType =
     "mssql"|
     "mongodb"|
     "firebird"|
+    "aurora-data-api"|
     "expo";

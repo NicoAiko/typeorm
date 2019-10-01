@@ -162,6 +162,7 @@ export type SimpleColumnType =
 
     // other types
     |"enum" // mysql, postgres
+    |"set" // mysql
     |"cidr" // postgres
     |"inet" // postgres, cockroachdb
     |"macaddr"// postgres
@@ -181,7 +182,8 @@ export type SimpleColumnType =
     |"urowid" // oracle
     |"uniqueidentifier" // mssql
     |"rowversion" // mssql
-    |"array"; // cockroachdb
+    |"array" // cockroachdb
+    |"cube"; // postgres
 
 /**
  * Any column type column can be.

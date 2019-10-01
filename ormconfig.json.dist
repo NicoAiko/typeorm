@@ -77,7 +77,8 @@
     "type": "mongodb",
     "database": "test",
     "logging": false,
-    "useNewUrlParser": true
+    "useNewUrlParser": true,
+    "useUnifiedTopology": true
   },
   {
     "skip": false,

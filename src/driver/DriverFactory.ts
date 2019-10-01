@@ -11,6 +11,7 @@ import {SqljsDriver} from "./sqljs/SqljsDriver";
 import {MysqlDriver} from "./mysql/MysqlDriver";
 import {PostgresDriver} from "./postgres/PostgresDriver";
 import {ExpoDriver} from "./expo/ExpoDriver";
+import {AuroraDataApiDriver} from "./aurora-data-api/AuroraDataApiDriver";
 import {Driver} from "./Driver";
 import {Connection} from "../connection/Connection";
 import {FirebirdDriver} from "./firebird/FirebirdDriver";
@@ -54,6 +55,8 @@ export class DriverFactory {
                 return new ExpoDriver(connection);
             case "firebird":
                 return new FirebirdDriver(connection);
+            case "aurora-data-api":
+                return new AuroraDataApiDriver(connection);
             default:
                 throw new MissingDriverError(type);
         }
