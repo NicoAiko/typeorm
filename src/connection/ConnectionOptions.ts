@@ -31,4 +31,5 @@ export type ConnectionOptions =
     SqljsConnectionOptions|
     MongoConnectionOptions|
     AuroraDataApiConnectionOptions|
+    FirebirdConnectionOptions|
     ExpoConnectionOptions;
