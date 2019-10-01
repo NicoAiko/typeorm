@@ -52,7 +52,7 @@ export class FirebirdDriver implements Driver {
         "bigint": { width: 20 }
     };
 
-    spatialTypes: ColumnType[];
+    spatialTypes: ColumnType[] = [];
 
     withLengthColumnTypes: ColumnType[] = [
         "char",
@@ -193,7 +193,7 @@ export class FirebirdDriver implements Driver {
         return [sql, escapedParameters];
     }
     escape(columnName: string): string {
-        return "`" + columnName + "`";
+        return `"${columnName}"`;
     }
     buildTableName(tableName: string, schema?: string | undefined, database?: string | undefined): string {
         return `${tableName}`;
