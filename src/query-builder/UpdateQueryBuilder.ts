@@ -83,7 +83,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             // execute update query
             const [sql, parameters] = this.getQueryAndParameters();
-            console.log(sql, parameters);
+
             const updateResult = new UpdateResult();
             const result = await queryRunner.query(sql, parameters);
 
