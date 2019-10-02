@@ -21,6 +21,7 @@ import {OracleDriver} from "../driver/oracle/OracleDriver";
 import {UpdateValuesMissingError} from "../error/UpdateValuesMissingError";
 import {EntityColumnNotFound} from "../error/EntityColumnNotFound";
 import {QueryDeepPartialEntity} from "./QueryPartialEntity";
+import { FirebirdDriver } from "../driver/firebird/FirebirdDriver";
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -82,6 +83,7 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
             // execute update query
             const [sql, parameters] = this.getQueryAndParameters();
+            console.log(sql, parameters);
             const updateResult = new UpdateResult();
             const result = await queryRunner.query(sql, parameters);
 
@@ -371,7 +373,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         const newParameters: ObjectLiteral = {};
         let parametersCount =   this.connection.driver instanceof MysqlDriver ||
                                 this.connection.driver instanceof OracleDriver ||
-                                this.connection.driver instanceof AbstractSqliteDriver
+                                this.connection.driver instanceof AbstractSqliteDriver ||
+                                this.connection.driver instanceof FirebirdDriver
             ? 0 : Object.keys(this.expressionMap.nativeParameters).length;
         if (metadata) {
             EntityMetadata.createPropertyPath(metadata, valuesSet).forEach(propertyPath => {
@@ -409,7 +412,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                         if (this.connection.driver instanceof MysqlDriver ||
                             this.connection.driver instanceof OracleDriver ||
-                            this.connection.driver instanceof AbstractSqliteDriver) {
+                            this.connection.driver instanceof AbstractSqliteDriver ||
+                            this.connection.driver instanceof FirebirdDriver) {
                             newParameters[paramName] = value;
                         } else {
                             this.expressionMap.nativeParameters[paramName] = value;
@@ -453,7 +457,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
 
                     if (this.connection.driver instanceof MysqlDriver ||
                         this.connection.driver instanceof OracleDriver ||
-                        this.connection.driver instanceof AbstractSqliteDriver) {
+                        this.connection.driver instanceof AbstractSqliteDriver ||
+                        this.connection.driver instanceof FirebirdDriver) {
                         newParameters[key] = value;
                     } else {
                         this.expressionMap.nativeParameters[key] = value;
@@ -473,7 +478,8 @@ export class UpdateQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
         // because some drivers like mysql depend on order of parameters
         if (this.connection.driver instanceof MysqlDriver ||
             this.connection.driver instanceof OracleDriver ||
-            this.connection.driver instanceof AbstractSqliteDriver) {
+            this.connection.driver instanceof AbstractSqliteDriver ||
+            this.connection.driver instanceof FirebirdDriver) {
             this.expressionMap.nativeParameters = Object.assign(newParameters, this.expressionMap.nativeParameters);
         }
 
