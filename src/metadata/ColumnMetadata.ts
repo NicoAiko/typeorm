@@ -297,6 +297,11 @@ export class ColumnMetadata {
      */
     srid?: number;
 
+    /**
+     * CAST expression (Firebird)
+     */
+    cast?: string;
+
     // ---------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------
@@ -356,6 +361,9 @@ export class ColumnMetadata {
         if (options.args.options.zerofill) {
             this.zerofill = options.args.options.zerofill;
             this.unsigned = true; // if you specify ZEROFILL for a numeric column, MySQL automatically adds the UNSIGNED attribute to the column
+        }
+        if (options.args.options.cast) {
+            this.cast = options.args.options.cast;
         }
         if (options.args.options.unsigned)
             this.unsigned = options.args.options.unsigned;

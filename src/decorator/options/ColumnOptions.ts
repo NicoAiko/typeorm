@@ -167,4 +167,9 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * SRID (Spatial Reference ID (EPSG code))
      */
     srid?: number;
+
+    /**
+     * CAST expression used for this column (for Firebird only)
+     */
+    cast?: string;
 }

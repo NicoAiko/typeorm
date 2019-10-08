@@ -1708,12 +1708,16 @@ export class SelectQueryBuilder<Entity> extends QueryBuilder<Entity> implements 
                 if (this.connection.driver instanceof SqlServerDriver)
                     selectionPath = `${selectionPath}.ToString()`;
             }
-            return {
+            const result: any = {
                 selection: selectionPath,
                 aliasName: selection && selection.aliasName ? selection.aliasName : DriverUtils.buildColumnAlias(this.connection.driver, aliasName, column.databaseName),
                 // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
                 virtual: selection ? selection.virtual === true : (hasMainAlias ? false : true),
             };
+            if (this.connection.driver instanceof FirebirdDriver && column.cast) {
+                result.selection = `CAST (${selectionPath} AS ${column.type}(${column.length}) character set ${column.cast})`;
+            }
+            return result;
         });
     }
 
