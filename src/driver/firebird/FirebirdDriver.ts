@@ -171,7 +171,7 @@ export class FirebirdDriver implements Driver {
     escapeQueryWithParameters(sql: string, parameters: ObjectLiteral, nativeParameters: ObjectLiteral): [string, any[]] {
         const escapedParameters: any[] = Object.keys(nativeParameters).map(key => nativeParameters[key]);
         if (!parameters || !Object.keys(parameters).length)
-            return [sql, escapedParameters];
+        return [sql, escapedParameters];
 
         const keys = Object.keys(parameters).map(parameter => "(:(\\.\\.\\.)?" + parameter + "\\b)").join("|");
         sql = sql.replace(new RegExp(keys, "g"), (key: string) => {
@@ -186,6 +186,16 @@ export class FirebirdDriver implements Driver {
                 return value();
 
             } else {
+                // @NOTE: We splitted the parameters since node-firebird seems to fail with parameter arrays...
+                // Kinda a hack, lets see how long this will work well...
+                if (key.substr(0, 4) === ":...") {
+                    const q: any = [];
+                    value.forEach((v: any) => {
+                        q.push("?");
+                        escapedParameters.push(v);
+                    });
+                    return q.join(",");
+                }
                 escapedParameters.push(value);
                 return "?";
             }
