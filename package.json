@@ -10,6 +10,9 @@
     "email": "pleerock.me@gmail.com"
   },
   "main": "build/package/index.js",
+  "bin": {
+    "typeorm": "build/package/cli.js"
+  },
   "browser": {
     "./browser/driver/postgres/PostgresDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
     "./browser/driver/oracle/OracleDriver.ts": "./browser/platform/BrowserDisabledDriversDummy.js",
