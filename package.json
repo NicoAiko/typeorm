@@ -125,9 +125,6 @@
     "lint": "tslint -p .",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 2"
   },
-  "bin": {
-    "typeorm": "./cli.js"
-  },
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/typeorm",
