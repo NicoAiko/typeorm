@@ -67,7 +67,19 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
      * Returns obtained database connection.
      */
     connect(): Promise<any> {
-        this.databaseConnectionPromise = this.driver.connect();
+        if (this.databaseConnection) {
+            return Promise.resolve(this.databaseConnection);
+        }
+
+        if (this.databaseConnectionPromise) {
+            return this.databaseConnectionPromise;
+        }
+
+        this.databaseConnectionPromise = this.driver.connect().then((con) => {
+            this.databaseConnection = con;
+            return this.databaseConnection;
+        });
+
         return this.databaseConnectionPromise;
     }
 
