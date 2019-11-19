@@ -75,7 +75,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
             return this.databaseConnectionPromise;
         }
 
-        this.databaseConnectionPromise = this.driver.connect().then((con) => {
+        this.databaseConnectionPromise = this.driver.obtainConnection().then((con) => {
             this.databaseConnection = con;
             return this.databaseConnection;
         });
@@ -89,8 +89,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
      */
     release(): Promise<void> {
         this.isReleased = true;
-        if (this.databaseConnection)
-            this.databaseConnection.release();
+
         return Promise.resolve();
     }
 

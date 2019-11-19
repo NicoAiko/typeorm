@@ -147,6 +147,10 @@ export class FirebirdDriver implements Driver {
         });
     }
 
+    async obtainConnection() {
+        return Promise.resolve(this.connection);
+    }
+
     afterConnect(): Promise<void> {
         return Promise.resolve();
     }
