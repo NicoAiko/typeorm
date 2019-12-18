@@ -66,6 +66,4 @@ export interface FirebirdConnectionOptions extends BaseConnectionOptions, Firebi
      * (Default: false)
      */
     readonly multipleStatements?: boolean;
-
-    pooling: boolean;
 }

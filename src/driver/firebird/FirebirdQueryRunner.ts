@@ -17,7 +17,7 @@ import { TableCheck } from "../../schema-builder/table/TableCheck";
 import { TableForeignKey } from "../../schema-builder/table/TableForeignKey";
 import { ObjectLiteral } from "../../common/ObjectLiteral";
 import { ColumnType } from "../types/ColumnTypes";
-import { Transaction, ISOLATION_READ_COMMITED, ISOLATION_READ_UNCOMMITTED, ISOLATION_REPEATABLE_READ, ISOLATION_SERIALIZABLE } from "node-firebird";
+import { Transaction, TransactionIsolation } from "node-firebird-driver-native";
 import { ReadStream } from "fs";
 import { FirebirdError } from "./FirebirdError";
 import { OrmUtils } from "../../util/OrmUtils";
@@ -93,32 +93,18 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
         return Promise.resolve();
     }
 
-    translateIsolationLevel(isolationLevel: IsolationLevel): number[] {
+    translateIsolationLevel(isolationLevel: IsolationLevel): TransactionIsolation {
         switch (isolationLevel) {
             case "READ COMMITTED":
-                return ISOLATION_READ_COMMITED;
-            case "READ UNCOMMITTED":
-                return ISOLATION_READ_UNCOMMITTED;
-            case "REPEATABLE READ":
-                return ISOLATION_REPEATABLE_READ;
-            case "SERIALIZABLE":
-                return ISOLATION_SERIALIZABLE;
+                return TransactionIsolation.READ_COMMITTED;
             default:
-                return [];
+                return TransactionIsolation.READ_COMMITTED;
         }
     }
 
     async getTransaction(isolationLevel?: IsolationLevel): Promise<Transaction> {
-        return new Promise<Transaction>((ok, fail) => {
-            let isolationLevelFirebird = this.translateIsolationLevel(isolationLevel || "READ COMMITTED");
-
-            this.driver.firebirdDatabase.transaction(isolationLevelFirebird, (err, transaction) => {
-                if (err) {
-                    fail(err);
-                }
-
-                ok(transaction);
-            });
+        return this.driver.firebirdConnection.startTransaction({
+            isolation: this.translateIsolationLevel(isolationLevel || "READ COMMITTED"),
         });
     }
 
@@ -141,12 +127,9 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
     async commitTransaction(): Promise<void> {
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
-        return new Promise<void>((ok, fail) => {
-            this.transaction.commit((err) => {
-                if (err) fail(err);
-                this.isTransactionActive = false;
-                ok();
-            });
+
+        await this.transaction.commit().then(() => {
+            this.isTransactionActive = false;
         });
     }
 
@@ -158,61 +141,38 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
         if (!this.isTransactionActive)
             throw new TransactionNotStartedError();
 
-        return new Promise<void>((ok, fail) => {
-            this.transaction.rollback((err) => {
-                if (err) fail(err);
-                this.isTransactionActive = false;
-                ok();
-            });
+        return await this.transaction.rollback().then(() => {
+            this.isTransactionActive = false;
         });
     }
 
     /**
      * Executes a raw SQL query.
      */
-    query(query: string, parameters?: any[]): Promise<any> {
+    async query(query: string, parameters?: any[]): Promise<any> {
         if (this.isReleased)
             throw new QueryRunnerAlreadyReleasedError();
 
         this.connect();
-        return new Promise(async (ok, fail) => {
-            try {
-                this.driver.connection.logger.logQuery(query, parameters, this);
-                const queryStartTime = +new Date();
+        this.driver.connection.logger.logQuery(query, parameters, this);
+        const queryStartTime = +new Date();
+        let result;
 
-                if (this.isTransactionActive) {
-                    this.transaction.query(query, parameters || [], (err, result) => {
-                        const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
-                        const queryEndTime = +new Date();
-                        const queryExecutionTime = queryEndTime - queryStartTime;
-                        if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
+        try {
+            result = await this.driver.firebirdConnection.executeQuery(this.transaction, query, parameters);
+        } catch (error) {
+            this.driver.connection.logger.logQueryError(error, query, parameters, this);
+            return new QueryFailedError(query, parameters, error);
+        } finally {
+            const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
+            const queryEndTime = +new Date();
+            const queryExecutionTime = queryEndTime - queryStartTime;
+
+            if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
                             this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
 
-                        if (err) {
-                            this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                            return fail(new QueryFailedError(query, parameters, err));
-                        }
-                        ok(result);
-                    });
-                } else {
-                    this.driver.firebirdDatabase.query(query, parameters || [], (err, result) => {
-                        const maxQueryExecutionTime = this.driver.connection.options.maxQueryExecutionTime;
-                        const queryEndTime = +new Date();
-                        const queryExecutionTime = queryEndTime - queryStartTime;
-                        if (maxQueryExecutionTime && queryExecutionTime > maxQueryExecutionTime)
-                            this.driver.connection.logger.logQuerySlow(queryExecutionTime, query, parameters, this);
-
-                        if (err) {
-                            this.driver.connection.logger.logQueryError(err, query, parameters, this);
-                            return fail(new QueryFailedError(query, parameters, err));
-                        }
-                        ok(result);
-                    });
-                }
-            } catch (err) {
-                fail(err);
-            }
-        });
+            return result;
+        }
     }
 
     /**

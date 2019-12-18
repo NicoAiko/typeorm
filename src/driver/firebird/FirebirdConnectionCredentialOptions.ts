@@ -16,13 +16,13 @@ export class FirebirdConnectionCredentialOptions {
     /**
      * User for authentication
      */
-    user?: string;
-    
+    username?: string;
+
     /**
      * Password for authentication
      */
     password?: string;
-    
+
     /**
      * Use lowercase keys
      */
@@ -31,10 +31,10 @@ export class FirebirdConnectionCredentialOptions {
     /**
      * Database role
      */
-    role?: string;  
-    
+    role?: string;
+
     /**
      * Page size
      */
-    pageSize?: number; 
+    pageSize?: number;
 }

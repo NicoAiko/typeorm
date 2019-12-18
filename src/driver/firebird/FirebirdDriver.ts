@@ -10,8 +10,7 @@ import { TableColumn } from "../../schema-builder/table/TableColumn";
 import { EntityMetadata } from "../../metadata/EntityMetadata";
 import { Connection } from "../../connection/Connection";
 import { FirebirdConnectionOptions } from "./FirebirdConnectionOptions";
-import { PlatformTools } from "../../platform/PlatformTools";
-import { Database, Options, ConnectionPool } from "node-firebird";
+import { createNativeClient, getDefaultLibraryFilename, ConnectOptions, Attachment, Client } from "node-firebird-driver-native";
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder";
 import { FirebirdQueryRunner } from "./FirebirdQueryRunner";
 import { DateUtils } from "../../util/DateUtils";
@@ -97,53 +96,38 @@ export class FirebirdDriver implements Driver {
     };
     connection: Connection;
     /**
-     * Database connection object from node-firebird
-     */
-    firebird: any;
-    /**
      * Connection options for firebird connection
      */
-    firebirdOptions: Options;
-
-    /**
-     * Database pool connection object from node-firebird
-     */
-    firebirdPool: ConnectionPool;
+    firebirdOptions: ConnectOptions;
 
     /**
      * Firebrid database (no pooling)
      */
-    firebirdDatabase: Database;
+    // firebirdDatabase: Attachment;
+
+    /**
+     * Actual Firebird client that needs to be disposed after usage
+     */
+    firebirdClient: Client;
+
+    /**
+     * Thread created by connecting to Firebird via firebirdClient
+     */
+    firebirdConnection: Attachment;
 
     constructor(connection: Connection) {
         this.connection = connection;
         this.options = connection.options as FirebirdConnectionOptions;
-        this.firebirdOptions = connection.options as Options;
-
-        // load mysql package
-        this.firebird = PlatformTools.load("node-firebird");
+        this.firebirdOptions = connection.options as ConnectOptions;
     }
 
     async connect(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            if (this.options.pooling) {
-                this.firebirdPool = this.firebird.pool(5, this.firebirdOptions);
-                this.firebirdPool.get((err, database) => {
-                    if (err) {
-                        fail(err);
-                    }
-                    this.firebirdDatabase = database;
-                    ok();
-                });
-            } else {
-                this.firebird.attachOrCreate(this.firebirdOptions, (err: any, database: Database) => {
-                    if (err) {
-                        fail(err);
-                    }
-                    this.firebirdDatabase = database;
-                    ok();
-                });
-            }
+        const { host, port, username, password, database } = this.options;
+
+        this.firebirdClient = createNativeClient(getDefaultLibraryFilename());
+        this.firebirdConnection = await this.firebirdClient.connect(`${host}/${port}:${database}`, {
+            username,
+            password,
         });
     }
 
@@ -156,14 +140,7 @@ export class FirebirdDriver implements Driver {
     }
 
     async disconnect(): Promise<void> {
-        return new Promise<void>((ok, fail) => {
-            if (this.options.pooling) {
-                this.firebirdPool.destroy();
-                ok();
-            } else {
-                this.firebirdDatabase.detach(() => ok());
-            }
-        });
+        return this.firebirdClient.dispose();
     }
 
     createSchemaBuilder(): SchemaBuilder {
