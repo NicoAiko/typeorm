@@ -2,7 +2,7 @@
   "version": "2.1.1",
   "compilerOptions": {
     "outDir": "build",
-    "target": "es6",
+    "target": "es2018",
     "module": "commonjs",
     "moduleResolution": "node",
     "importHelpers": true,
@@ -17,7 +17,8 @@
     "pretty": true,
     "strictNullChecks": true,
     "noUnusedLocals": true,
-    "downlevelIteration": true
+    "downlevelIteration": true,
+    "skipLibCheck": true
   },
   "exclude": ["tmp", "temp", "build", "node_modules", "test", "sample"]
 }
