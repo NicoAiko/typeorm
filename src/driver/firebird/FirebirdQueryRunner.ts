@@ -159,7 +159,7 @@ export class FirebirdQueryRunner extends BaseQueryRunner implements QueryRunner 
         let result;
 
         try {
-            result = await this.driver.firebirdConnection.executeQuery(this.transaction, query, parameters);
+            result = await this.driver.firebirdConnection.executeQuery(this.transaction ?? null, query, parameters);
         } catch (error) {
             this.driver.connection.logger.logQueryError(error, query, parameters, this);
             return new QueryFailedError(query, parameters, error);
